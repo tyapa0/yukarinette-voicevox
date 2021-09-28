@@ -1,0 +1,2 @@
+# yukarinette-voicevox
+ゆかりねっとのVOICEVOXプラグイン
