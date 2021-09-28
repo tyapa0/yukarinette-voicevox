@@ -172,6 +172,8 @@ namespace VoiceVoxPlugin
         {
             Logging($"Speech Start. {text}");
 
+            text = text.Replace(" ", "").Replace("　", "");
+
             var parameters1 = new Dictionary<string, string>
             {
                 { "text", text },
