@@ -101,7 +101,7 @@ namespace VoiceVoxPlugin
 
             SettingWindowViewModel.Instance.SpeakerId = Settings.Default.SpeakerId;
             SettingWindowViewModel.Instance.SoundDeviceId = Settings.Default.SoundDeviceId;
-            foreach (var i in Enumerable.Range(0, 10))
+            foreach (var i in Enumerable.Range(0, 120))
             {
                 try
                 {
@@ -123,7 +123,8 @@ namespace VoiceVoxPlugin
                 }
                 catch (HttpRequestException ex)
                 {
-                    await Task.Delay((int)(100 * Math.Pow(2, i)));
+
+                    await Task.Delay(1_000);
                     continue;
                 }
 
