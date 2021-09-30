@@ -102,6 +102,7 @@
     <Compile Include="UI\SettingWindow.xaml.cs">
       <DependentUpon>SettingWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ViewModel\OptionWindowViewModel.cs" />
     <Compile Include="ViewModel\SettingWindowViewModel.cs" />
   </ItemGroup>
   <ItemGroup>

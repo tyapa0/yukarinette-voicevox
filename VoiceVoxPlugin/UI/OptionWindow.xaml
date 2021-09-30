@@ -4,6 +4,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
         xmlns:local="clr-namespace:VoiceVoxPlugin.UI"
+        xmlns:viewModel="clr-namespace:VoiceVoxPlugin.ViewModel"
         mc:Ignorable="d"
         SizeToContent="WidthAndHeight"
         Title="設定">
@@ -47,6 +48,11 @@
         </Style>
     </Window.Resources>
 
+    <Window.DataContext>
+        <viewModel:OptionWindowViewModel/>
+    </Window.DataContext>
+
+
     <StackPanel Margin="9">
 
         <GroupBox Header="VOICE VOX 設定">
@@ -65,15 +71,26 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBox Grid.Column="0" x:Name="TextBox" Text=""/>
-                    <Button Grid.Column="1" Content="参照"
-                            Click="ButtonBase_OnClick"/>
+                    <TextBox Grid.Column="0" x:Name="TextBox" Text="{Binding ExePath}" IsReadOnly="True"/>
+                    <Button Grid.Column="1" Content="参照" Click="ButtonBase_OnClick"/>
+                </Grid>
+
+                <Label Content="VOICE VOX 起動待機時間"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox Grid.Column="0" MinWidth="60" Text="{Binding VoiceVoxTimeout}"
+                             TextAlignment="Right"/>
+                    <Label Grid.Column="1" Content="秒"/>
                 </Grid>
             </StackPanel>
         </GroupBox>
 
         <GroupBox Header="その他設定">
             <CheckBox Content="起動した VoiceVox を音声認識終了時に同時に終了する"
+                      IsChecked="{Binding ExitWhenFinished,UpdateSourceTrigger=PropertyChanged}"
                       x:Name="CheckBox"/>
         </GroupBox>
 

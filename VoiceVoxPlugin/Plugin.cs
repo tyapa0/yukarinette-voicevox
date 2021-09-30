@@ -70,12 +70,8 @@ namespace VoiceVoxPlugin
         {
             Logging("Setting Start.");
 
-            var window = new OptionWindow(Settings.Default.ExitWhenFinished, Settings.Default.ExePath);
-            if (window.ShowDialog() ?? false)
-            {
-                Settings.Default.ExitWhenFinished = window.ExitWhenFinished;
-                Settings.Default.ExePath = window.ExePath;
-            }
+            var window = new OptionWindow();
+            window.ShowDialog();
 
             Logging("Setting End.");
         }
@@ -101,7 +97,9 @@ namespace VoiceVoxPlugin
 
             SettingWindowViewModel.Instance.SpeakerId = Settings.Default.SpeakerId;
             SettingWindowViewModel.Instance.SoundDeviceId = Settings.Default.SoundDeviceId;
-            foreach (var i in Enumerable.Range(0, 120))
+
+            var loop = Math.Max(1, Settings.Default.VoiceVoxTimeout);
+            foreach (var i in Enumerable.Range(0, loop))
             {
                 try
                 {
@@ -123,7 +121,6 @@ namespace VoiceVoxPlugin
                 }
                 catch (HttpRequestException ex)
                 {
-
                     await Task.Delay(1_000);
                     continue;
                 }

@@ -70,5 +70,17 @@ namespace VoiceVoxPlugin.Properties {
                 this["ExePath"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("120")]
+        public int VoiceVoxTimeout {
+            get {
+                return ((int)(this["VoiceVoxTimeout"]));
+            }
+            set {
+                this["VoiceVoxTimeout"] = value;
+            }
+        }
     }
 }

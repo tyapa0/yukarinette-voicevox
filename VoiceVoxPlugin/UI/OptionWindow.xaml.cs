@@ -1,5 +1,8 @@
-﻿using System.Windows;
+﻿using System.IO;
+using System.Windows;
 using Microsoft.Win32;
+using VoiceVoxPlugin.Properties;
+using VoiceVoxPlugin.ViewModel;
 
 namespace VoiceVoxPlugin.UI
 {
@@ -8,15 +11,18 @@ namespace VoiceVoxPlugin.UI
     /// </summary>
     public partial class OptionWindow 
     {
-        public OptionWindow(bool exitWhenFinished, string exePath)
+        public OptionWindow()
         {
             InitializeComponent();
-            CheckBox.IsChecked = exitWhenFinished;
-            TextBox.Text = exePath;
+            ViewModel.ExePath = Settings.Default.ExePath;
+            ViewModel.ExitWhenFinished = Settings.Default.ExitWhenFinished;
+            ViewModel.VoiceVoxTimeout = Settings.Default.VoiceVoxTimeout;
         }
 
-        public bool ExitWhenFinished => CheckBox.IsChecked ?? false;
-        public string ExePath => TextBox.Text ?? "";
+        private OptionWindowViewModel ViewModel => DataContext as OptionWindowViewModel;
+        public bool ExitWhenFinished => ViewModel.ExitWhenFinished;
+        public string ExePath => ViewModel.ExePath;
+        public int VoiceVoxTimeout => ViewModel.VoiceVoxTimeout;
 
         private void ButtonBase_OnClick(object sender, RoutedEventArgs e)
         {
@@ -36,6 +42,16 @@ namespace VoiceVoxPlugin.UI
 
         private void OkButton_Click(object sender, RoutedEventArgs e)
         {
+            if (!File.Exists(ViewModel.ExePath))
+            {
+                MessageBox.Show("VOICE VOX実行ファイルが見つかりません", "設定エラー", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                return;
+            }
+
+            Settings.Default.ExePath = ViewModel.ExePath;
+            Settings.Default.ExitWhenFinished = ViewModel.ExitWhenFinished;
+            Settings.Default.VoiceVoxTimeout = ViewModel.VoiceVoxTimeout;
+
             DialogResult = true;
             Close();
         }
