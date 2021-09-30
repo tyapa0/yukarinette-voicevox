@@ -207,37 +207,14 @@ namespace VoiceVoxPlugin
                     $"/synthesis?{await new FormUrlEncodedContent(parameters2).ReadAsStringAsync()}",
                     sendContent);
 
-                // var cacheFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Yukarinette", "VoiceVoxCache");
-                // Directory.CreateDirectory(cacheFolder);
-                // var filename = Path.Combine(cacheFolder, $"{DateTime.Now:yyyyMMddHHmmss}.wav");
-                // using (var stream = new FileStream(filename, FileMode.CreateNew, FileAccess.ReadWrite))
-                // {
-                //     await response2.Content.CopyToAsync(stream);
-                // }
-                // 
-                // using (var engine = new ISoundEngine(SoundOutputDriver.AutoDetect, SoundEngineOptionFlag.DefaultOptions, SettingWindowViewModel.Instance.SoundDeviceId))
-                // {
-                //     var sound = engine.AddSoundSourceFromFile(filename);
-                //     var a = engine.Play2D(sound, false, false, false);
-                //     
-                // }
                 using (var memory = new MemoryStream())
                 {
                     await response2.Content.CopyToAsync(memory);
                     await memory.FlushAsync();
                     memory.Seek(0, SeekOrigin.Begin);
                 
-                    var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), $"{DateTime.Now:yyyyMMddHHmmss}.wav");
-                    using (var stream = new FileStream(path, FileMode.CreateNew, FileAccess.ReadWrite))
-                    {
-                        await memory.CopyToAsync(stream);
-                        await stream.FlushAsync();
-                    }
-                    memory.Seek(0, SeekOrigin.Begin);
-                
                     using (var engine = new ISoundEngine(SoundOutputDriver.AutoDetect, SoundEngineOptionFlag.DefaultOptions, SettingWindowViewModel.Instance.SoundDeviceId))
                     {
-                        // var filename = $"{DateTime.Now:yyyyMMddHHmmssfff}.wav";
                         var sound = engine.GetSoundSource("sound.wav");
                         if (sound != null)
                         {
