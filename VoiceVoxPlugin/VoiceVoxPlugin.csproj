@@ -79,7 +79,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Core\Element.cs" />
+    <Compile Include="Core\MyException.cs" />
     <Compile Include="Core\RelayCommand.cs" />
+    <Compile Include="Core\TaskExtension.cs" />
     <Compile Include="Data\AccentPhrase.cs" />
     <Compile Include="Data\Mora.cs" />
     <Compile Include="Data\QueryResult.cs" />

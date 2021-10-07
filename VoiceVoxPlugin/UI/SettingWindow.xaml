@@ -79,21 +79,6 @@
                       SelectedValue="{Binding SpeakerId,UpdateSourceTrigger=PropertyChanged}"/>
             </Grid>
 
-
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" SharedSizeGroup="Label"/>
-                    <ColumnDefinition/>
-                </Grid.ColumnDefinitions>
-
-                <Label Grid.Column="0" Content="スピーカー："
-                   Style="{StaticResource TopLabel}"/>
-                <ComboBox Grid.Column="1"
-                      ItemsSource="{Binding SoundDevices}"
-                      SelectedValuePath="Id" DisplayMemberPath="Description"
-                      SelectedValue="{Binding SoundDeviceId,UpdateSourceTrigger=PropertyChanged}"/>
-            </Grid>
-
             <GroupBox Header="トーク設定">
                 <StackPanel Orientation="Horizontal">
 

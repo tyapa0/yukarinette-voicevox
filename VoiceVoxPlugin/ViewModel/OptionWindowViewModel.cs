@@ -1,4 +1,7 @@
-﻿using VoiceVoxPlugin.Core;
+﻿using System.Collections;
+using System.Collections.Generic;
+using VoiceVoxPlugin.Core;
+using VoiceVoxPlugin.Data;
 
 namespace VoiceVoxPlugin.ViewModel
 {
@@ -22,5 +25,8 @@ namespace VoiceVoxPlugin.ViewModel
                 _voiceVoxTimeout = value;
             }
         }
+
+        public IEnumerable<SoundDevice> SoundDevices { get; set; }
+        public string SoundDeviceId { get; set; }
     }
 }

@@ -85,6 +85,11 @@
                              TextAlignment="Right"/>
                     <Label Grid.Column="1" Content="秒"/>
                 </Grid>
+
+                <Label Content="再生デバイス"/>
+                <ComboBox ItemsSource="{Binding SoundDevices}"
+                          SelectedValue="{Binding SoundDeviceId,UpdateSourceTrigger=PropertyChanged}"
+                          SelectedValuePath="Id" DisplayMemberPath="Description"/>
             </StackPanel>
         </GroupBox>
 

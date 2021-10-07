@@ -17,9 +17,6 @@ namespace VoiceVoxPlugin.ViewModel
         public ObservableCollection<Speaker> Speakers { get; } = new ObservableCollection<Speaker>();
         public int SpeakerId { get; set; }
 
-        public ObservableCollection<SoundDevice> SoundDevices { get; } = new ObservableCollection<SoundDevice>();
-        public string SoundDeviceId { get; set; }
-
         private decimal _speedScale = 1.0m;
 
         public decimal SpeedScale

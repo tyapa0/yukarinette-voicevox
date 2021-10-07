@@ -5,10 +5,12 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using IrrKlang;
 using Newtonsoft.Json;
+using VoiceVoxPlugin.Core;
 using VoiceVoxPlugin.Data;
 using VoiceVoxPlugin.Properties;
 using VoiceVoxPlugin.UI;
@@ -23,8 +25,11 @@ namespace VoiceVoxPlugin
         public override string GUID => "D90253B4-7074-44F9-A957-C393FC23260D";
         private Window Window { get; } = new Window();
         private SettingWindow SettingWindow { get; set; }
-        private HttpClient HttpClient { get; } = new HttpClient();
+        private HttpClient HttpClient { get; } = new HttpClient() { Timeout = new TimeSpan(0, 1, 0) };
         private List<SoundDevice> SoundDevices { get; } = new List<SoundDevice>();
+        private bool IsBusy { get; set; }
+        private ISoundEngine Engine { get; set; }
+        private string VOICE_VOX_URL = "http://127.0.0.1:50021";
 
         private void Logging(string text)
         {
@@ -34,12 +39,18 @@ namespace VoiceVoxPlugin
         public override void Loaded()
         {
             Logging("Loaded Start.");
+            Settings.Default.Reload();  
 
             var setting = SettingWindowViewModel.Instance;
             setting.SpeakerId = Settings.Default.SpeakerId;
-            setting.SoundDeviceId = Settings.Default.SoundDeviceId;
-            // setting.SpeedScale = Settings.Default.SpeedScale;
 
+            SoundDevices.AddRange(FetchSoundDevices());
+
+            Logging("Loaded End.");
+        }
+
+        private IEnumerable<SoundDevice> FetchSoundDevices()
+        {
             using (var soundDevices = new ISoundDeviceList(SoundDeviceListType.PlaybackDevice))
             {
                 foreach (var i in Enumerable.Range(0, soundDevices.DeviceCount))
@@ -47,97 +58,116 @@ namespace VoiceVoxPlugin
                     var id = soundDevices.getDeviceID(i);
                     var description = soundDevices.getDeviceDescription(i);
                     var soundDevice = new SoundDevice(id, description);
-                    SoundDevices.Add(soundDevice);
+
+                    yield return soundDevice;
                 }
             }
-
-            Logging("Loaded End.");
         }
 
         public override void Closed()
         {
-            Logging("Loaded Start.");
+            Logging("Closed Start.");
 
-            var setting = SettingWindowViewModel.Instance;
-            Settings.Default.SpeakerId = setting.SpeakerId;
-            Settings.Default.SoundDeviceId = setting.SoundDeviceId;
-            Settings.Default.Save();
-
-            Logging("Loaded End.");
+            Logging("Closed End.");
         }
 
         public override void Setting()
         {
             Logging("Setting Start.");
 
-            var window = new OptionWindow();
+            var window = new OptionWindow(SoundDevices);
             window.ShowDialog();
 
             Logging("Setting End.");
         }
 
-        public override async void SpeechRecognitionStart()
+        public override void SpeechRecognitionStart()
         {
             Logging("SpeechRecognitionStart Start.");
+            IsBusy = true;
 
-            var processes = Process.GetProcessesByName("VOICEVOX");
-            if (!processes.Any())
+            Engine = new ISoundEngine(
+                SoundOutputDriver.AutoDetect,
+                SoundEngineOptionFlag.DefaultOptions,
+                Settings.Default.SoundDeviceId);
+
+            try
             {
-                if (!string.IsNullOrWhiteSpace(Settings.Default.ExePath))
+                var processes = Process.GetProcessesByName("VOICEVOX");
+                if (!processes.Any())
                 {
-                    Process.Start(Settings.Default.ExePath);
-                }
-            }
-
-            var isSuccess = false;
-            if (HttpClient.BaseAddress == null)
-            {
-                HttpClient.BaseAddress = new Uri("http://127.0.0.1:50021");
-            }
-
-            SettingWindowViewModel.Instance.SpeakerId = Settings.Default.SpeakerId;
-            SettingWindowViewModel.Instance.SoundDeviceId = Settings.Default.SoundDeviceId;
-
-            var loop = Math.Max(1, Settings.Default.VoiceVoxTimeout);
-            foreach (var i in Enumerable.Range(0, loop))
-            {
-                try
-                {
-                    var response = await HttpClient.GetAsync("/speakers"); ;
-                    var str = await response.Content.ReadAsStringAsync();
-                    var speakers = JsonConvert.DeserializeObject<IEnumerable<Speaker>>(str);
-                    var list1 = (speakers ?? Enumerable.Empty<Speaker>()).ToList();
-                    var list2 = SoundDevices.ToList();
-                    foreach (var s in list1)
+                    if (!string.IsNullOrWhiteSpace(Settings.Default.ExePath))
                     {
-                        SettingWindowViewModel.Instance.Speakers.Add(s);
+                        Process.Start(Settings.Default.ExePath);
                     }
-                    foreach (var s in list2)
+                }
+
+                var isSuccess = false;
+                if (HttpClient.BaseAddress == null)
+                {
+                    HttpClient.BaseAddress = new Uri(VOICE_VOX_URL);
+                }
+
+                SettingWindowViewModel.Instance.SpeakerId = Settings.Default.SpeakerId;
+
+                var loop = Math.Max(1, Settings.Default.VoiceVoxTimeout);
+                foreach (var i in Enumerable.Range(0, loop))
+                {
+                    if (!IsBusy)
                     {
-                        SettingWindowViewModel.Instance.SoundDevices.Add(s);
+                        throw new MyException("");
                     }
 
-                    isSuccess = true;
+                    try
+                    {
+                        var response = HttpClient.GetAsync("/speakers").Synchronous();
+                        var str = response.Content.ReadAsStringAsync().Synchronous();
+                        var speakers = JsonConvert.DeserializeObject<IEnumerable<Speaker>>(str);
+                        var list1 = (speakers ?? Enumerable.Empty<Speaker>()).ToList();
+                        foreach (var s in list1)
+                        {
+                            SettingWindowViewModel.Instance.Speakers.Add(s);
+                        }
+
+                        isSuccess = true;
+                    }
+                    catch (Exception)
+                    {
+                        Thread.Sleep(1_000);
+                        continue;
+                    }
+
+                    break;
                 }
-                catch (HttpRequestException ex)
+
+                if (!isSuccess)
                 {
-                    await Task.Delay(1_000);
-                    continue;
+                    throw new MyException("VOICE VOX に接続できませんでした");
                 }
 
-                break;
-            }
+                SettingWindowViewModel.Instance.SpeedScale = Settings.Default.SpeedScale;
+                SettingWindowViewModel.Instance.PitchScale = Settings.Default.PitchScale;
+                SettingWindowViewModel.Instance.IntonationScale = Settings.Default.IntonationScale;
+                SettingWindowViewModel.Instance.VolumeScale = Settings.Default.VolumeScale;
 
-            if (!isSuccess)
-            {
-                MessageBox.Show("VOICE VOX に接続できませんでした");
+                Window.Dispatcher.Invoke(() =>
+                {
+                    SettingWindow = new SettingWindow();
+                    SettingWindow.Show();
+                });
             }
-
-            Window.Dispatcher.Invoke(() =>
+            catch (MyException ex)
             {
-                SettingWindow = new SettingWindow();
-                SettingWindow.Show();
-            });
+                if (!string.IsNullOrEmpty(ex.Message))
+                {
+                    MessageBox.Show(ex.Message, "起動エラー", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                }
+
+                using (Engine)
+                {
+                }
+                Engine = null;
+            }
 
             Logging("SpeechRecognitionStart End.");
         }
@@ -145,12 +175,24 @@ namespace VoiceVoxPlugin
         public override void SpeechRecognitionStop()
         {
             Logging("SpeechRecognitionStop Start.");
+            IsBusy = false;
+
+            using (Engine)
+            {
+            }
+            Engine = null;
 
             Window.Dispatcher.Invoke(() =>
             {
                 SettingWindow?.Close();
+                SettingWindow = null;
                 Settings.Default.SpeakerId = SettingWindowViewModel.Instance.SpeakerId;
-                Settings.Default.SoundDeviceId = SettingWindowViewModel.Instance.SoundDeviceId;
+                // Settings.Default.SoundDeviceId = SettingWindowViewModel.Instance.SoundDeviceId;
+                Settings.Default.SpeedScale = SettingWindowViewModel.Instance.SpeedScale;
+                Settings.Default.PitchScale = SettingWindowViewModel.Instance.PitchScale;
+                Settings.Default.IntonationScale = SettingWindowViewModel.Instance.IntonationScale;
+                Settings.Default.VolumeScale = SettingWindowViewModel.Instance.VolumeScale;
+                Settings.Default.Save();
                 SettingWindowViewModel.Clear();
 
                 if (Settings.Default.ExitWhenFinished)
@@ -166,67 +208,127 @@ namespace VoiceVoxPlugin
             Logging("SpeechRecognitionStop End.");
         }
 
-        public override async void Speech(string text)
+        public override void Speech(string text)
         {
             Logging($"Speech Start. {text}");
-
             text = text.Replace(" ", "").Replace("　", "");
 
-            var parameters1 = new Dictionary<string, string>
+            if (Engine == null)
             {
-                { "text", text },
-                { "speaker", SettingWindowViewModel.Instance.SpeakerId.ToString() },
-            };
+                Logging("Engine is null");
+                Logging("Speech End.");
+                return;
+            }
 
-            var response1 = await HttpClient.PostAsync(
-                $"/audio_query?{await new FormUrlEncodedContent(parameters1).ReadAsStringAsync()}",
-                new StringContent(""));
+            const int MAX = 10;
+            QueryResult result = null;
 
-            if (response1.IsSuccessStatusCode)
+            foreach (var i in Enumerable.Range(1, MAX))
             {
-                var json = await response1.Content.ReadAsStringAsync();
-                // var d = JsonConvert.DeserializeObject<dynamic>(json);
-                // var j = JsonConvert.SerializeObject(d, Formatting.Indented);
-                // MessageBox.Show(j);
-                var result = JsonConvert.DeserializeObject<QueryResult>(json) ?? new QueryResult();
-                result.SpeedScale = SettingWindowViewModel.Instance.SpeedScale;
-                result.PitchScale = SettingWindowViewModel.Instance.PitchScale;
-                result.IntonationScale = SettingWindowViewModel.Instance.IntonationScale;
-                result.VolumeScale = SettingWindowViewModel.Instance.VolumeScale;
-
-                var parameters2 = new Dictionary<string, string>
+                if (result != null)
                 {
-                    { "speaker", SettingWindowViewModel.Instance.SpeakerId.ToString() },
-                };
+                    break;
+                }
 
-                var sendJson = JsonConvert.SerializeObject(result, Formatting.Indented);
-                var sendContent = new StringContent(sendJson, new UTF8Encoding(false), "application/json");
-                var response2 = await HttpClient.PostAsync(
-                    $"/synthesis?{await new FormUrlEncodedContent(parameters2).ReadAsStringAsync()}",
-                    sendContent);
-
-                using (var memory = new MemoryStream())
+                try
                 {
-                    await response2.Content.CopyToAsync(memory);
-                    await memory.FlushAsync();
-                    memory.Seek(0, SeekOrigin.Begin);
-                
-                    using (var engine = new ISoundEngine(SoundOutputDriver.AutoDetect, SoundEngineOptionFlag.DefaultOptions, SettingWindowViewModel.Instance.SoundDeviceId))
+                    var parameters1 = new Dictionary<string, string>
                     {
-                        var sound = engine.GetSoundSource("sound.wav");
-                        if (sound != null)
-                        {
-                            engine.RemoveSoundSource("sound.wav");
-                        }
-                        
-                        engine.AddSoundSourceFromIOStream(memory, "sound.wav");
-                        var status = engine.Play2D("sound.wav");
-                        while (!status.Finished)
-                        {
-                            await Task.Delay(1);
-                        }
+                        { "text", text },
+                        { "speaker", SettingWindowViewModel.Instance.SpeakerId.ToString() },
+                    };
+                    
+                    var stringParameter1 = string.Join("&", parameters1.Select(p => $"{Uri.EscapeUriString(p.Key)}={Uri.EscapeUriString(p.Value)}"));
+                    var uri1 = $"/audio_query?{stringParameter1}";
+                    var response1 = HttpClient.PostAsync(uri1, new StringContent("")).Synchronous();
+
+                    if (!response1.IsSuccessStatusCode)
+                    {
+                        break;
+                    }
+
+                    var json = response1.Content.ReadAsStringAsync().Synchronous();
+                    result = JsonConvert.DeserializeObject<QueryResult>(json);
+                }
+                catch (Exception ex)
+                {
+                    if (i == MAX)
+                    {
+                        Logging(ex.ToString());
+                        MessageBox.Show(ex.Message, "ERROR", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                    else
+                    {
+                        Logging(ex.ToString());
+                        continue;
                     }
                 }
+
+                break;
+            }
+
+            if (result == null)
+            {
+                Logging("Speech End.");
+                return;
+            }
+
+            result.SpeedScale = SettingWindowViewModel.Instance.SpeedScale;
+            result.PitchScale = SettingWindowViewModel.Instance.PitchScale;
+            result.IntonationScale = SettingWindowViewModel.Instance.IntonationScale;
+            result.VolumeScale = SettingWindowViewModel.Instance.VolumeScale;
+
+            foreach (var i in Enumerable.Range(1, MAX))
+            {
+                try
+                {
+                    var parameters2 = new Dictionary<string, string>
+                    {
+                        { "speaker", SettingWindowViewModel.Instance.SpeakerId.ToString() },
+                    };
+
+                    var sendJson = JsonConvert.SerializeObject(result, Formatting.Indented);
+                    var sendContent = new StringContent(sendJson, new UTF8Encoding(false), "application/json");
+                    var stringParameter2 = string.Join("&", parameters2.Select(p => $"{Uri.EscapeUriString(p.Key)}={Uri.EscapeUriString(p.Value)}"));
+                    var uri2 = $"/synthesis?{stringParameter2}";
+                    var response2 = HttpClient.PostAsync(uri2, sendContent).Synchronous();
+                    if (!response2.IsSuccessStatusCode)
+                    {
+                        return;
+                    }
+
+                    using (var memory = new MemoryStream())
+                    {
+                        response2.Content.CopyToAsync(memory).Synchronous();
+                        memory.Flush();
+                        memory.Seek(0, SeekOrigin.Begin);
+
+                        var soundName = $"sound{DateTime.Now:yyyyMMddHHmmssfff}.wav";
+                        Engine.AddSoundSourceFromIOStream(memory, soundName);
+                        Engine.Play2D(soundName);
+
+                        while (Engine.IsCurrentlyPlaying(soundName))
+                        {
+                            Thread.Sleep(1);
+                        }
+
+                        Engine.RemoveSoundSource(soundName);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (i == MAX)
+                    {
+                        Logging(ex.ToString());
+                        MessageBox.Show(ex.Message, "ERROR", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
+
+                break;
             }
 
             Logging("Speech End.");

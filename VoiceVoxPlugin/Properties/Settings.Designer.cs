@@ -82,5 +82,53 @@ namespace VoiceVoxPlugin.Properties {
                 this["VoiceVoxTimeout"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1")]
+        public decimal SpeedScale {
+            get {
+                return ((decimal)(this["SpeedScale"]));
+            }
+            set {
+                this["SpeedScale"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public decimal PitchScale {
+            get {
+                return ((decimal)(this["PitchScale"]));
+            }
+            set {
+                this["PitchScale"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1")]
+        public decimal IntonationScale {
+            get {
+                return ((decimal)(this["IntonationScale"]));
+            }
+            set {
+                this["IntonationScale"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1")]
+        public decimal VolumeScale {
+            get {
+                return ((decimal)(this["VolumeScale"]));
+            }
+            set {
+                this["VolumeScale"] = value;
+            }
+        }
     }
 }
