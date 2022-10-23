@@ -71,7 +71,7 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBox Grid.Column="0" x:Name="TextBox" Text="{Binding ExePath}" IsReadOnly="True"/>
+                    <TextBox Grid.Column="0" x:Name="TextBox" Text="{Binding ExePath,UpdateSourceTrigger=PropertyChanged}" IsReadOnly="True" />
                     <Button Grid.Column="1" Content="参照" Click="ButtonBase_OnClick"/>
                 </Grid>
 
@@ -81,7 +81,7 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <TextBox Grid.Column="0" MinWidth="60" Text="{Binding VoiceVoxTimeout}"
+                    <TextBox Grid.Column="0" MinWidth="60" Text="{Binding VoiceVoxTimeout,UpdateSourceTrigger=PropertyChanged}"
                              TextAlignment="Right"/>
                     <Label Grid.Column="1" Content="秒"/>
                 </Grid>

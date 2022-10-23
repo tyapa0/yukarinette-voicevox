@@ -7,6 +7,9 @@ namespace VoiceVoxPlugin.ViewModel
 {
     public class OptionWindowViewModel : Element
     {
+        private static OptionWindowViewModel _instance;
+        public static OptionWindowViewModel Instance => _instance ?? (_instance = new OptionWindowViewModel());
+
         public string ExePath { get; set; }
         public bool ExitWhenFinished { get; set; }
 

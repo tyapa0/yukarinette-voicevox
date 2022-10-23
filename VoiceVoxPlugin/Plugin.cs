@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using IrrKlang;
+
 using Newtonsoft.Json;
 using VoiceVoxPlugin.Core;
 using VoiceVoxPlugin.Data;
@@ -51,7 +51,7 @@ namespace VoiceVoxPlugin
 
         private IEnumerable<SoundDevice> FetchSoundDevices()
         {
-            using (var soundDevices = new ISoundDeviceList(SoundDeviceListType.PlaybackDevice))
+            using (var soundDevices = new ISoundDeviceList())
             {
                 foreach (var i in Enumerable.Range(0, soundDevices.DeviceCount))
                 {
@@ -75,6 +75,7 @@ namespace VoiceVoxPlugin
         {
             Logging("Setting Start.");
 
+            OptionWindowViewModel.Instance.SoundDeviceId = Settings.Default.SoundDeviceId;
             var window = new OptionWindow(SoundDevices);
             window.ShowDialog();
 
@@ -86,10 +87,7 @@ namespace VoiceVoxPlugin
             Logging("SpeechRecognitionStart Start.");
             IsBusy = true;
 
-            Engine = new ISoundEngine(
-                SoundOutputDriver.AutoDetect,
-                SoundEngineOptionFlag.DefaultOptions,
-                Settings.Default.SoundDeviceId);
+            Engine = new ISoundEngine(Settings.Default.SoundDeviceId);
 
             try
             {
@@ -126,7 +124,11 @@ namespace VoiceVoxPlugin
                         var list1 = (speakers ?? Enumerable.Empty<Speaker>()).ToList();
                         foreach (var s in list1)
                         {
-                            SettingWindowViewModel.Instance.Speakers.Add(s);
+                            foreach (var s2 in s.Styles)
+                            {
+                                s2.StyleName = s.Name + '(' + s2.StyleName + ')';
+                                SettingWindowViewModel.Instance.Speakers.Add(s2);
+                            }
                         }
 
                         isSuccess = true;
@@ -149,6 +151,7 @@ namespace VoiceVoxPlugin
                 SettingWindowViewModel.Instance.PitchScale = Settings.Default.PitchScale;
                 SettingWindowViewModel.Instance.IntonationScale = Settings.Default.IntonationScale;
                 SettingWindowViewModel.Instance.VolumeScale = Settings.Default.VolumeScale;
+                OptionWindowViewModel.Instance.SoundDeviceId = Settings.Default.SoundDeviceId;
 
                 Window.Dispatcher.Invoke(() =>
                 {
@@ -182,12 +185,12 @@ namespace VoiceVoxPlugin
             }
             Engine = null;
 
-            Window.Dispatcher.Invoke(() =>
+            Window.Dispatcher.InvokeAsync(() =>
             {
                 SettingWindow?.Close();
                 SettingWindow = null;
                 Settings.Default.SpeakerId = SettingWindowViewModel.Instance.SpeakerId;
-                // Settings.Default.SoundDeviceId = SettingWindowViewModel.Instance.SoundDeviceId;
+                Settings.Default.SoundDeviceId = OptionWindowViewModel.Instance.SoundDeviceId;
                 Settings.Default.SpeedScale = SettingWindowViewModel.Instance.SpeedScale;
                 Settings.Default.PitchScale = SettingWindowViewModel.Instance.PitchScale;
                 Settings.Default.IntonationScale = SettingWindowViewModel.Instance.IntonationScale;
@@ -303,16 +306,13 @@ namespace VoiceVoxPlugin
                         memory.Flush();
                         memory.Seek(0, SeekOrigin.Begin);
 
-                        var soundName = $"sound{DateTime.Now:yyyyMMddHHmmssfff}.wav";
-                        Engine.AddSoundSourceFromIOStream(memory, soundName);
-                        Engine.Play2D(soundName);
+                        Engine.Play2D(memory);
 
-                        while (Engine.IsCurrentlyPlaying(soundName))
+                        while (Engine.IsCurrentlyPlaying())
                         {
                             Thread.Sleep(1);
                         }
 
-                        Engine.RemoveSoundSource(soundName);
                     }
                 }
                 catch (Exception ex)

@@ -6,8 +6,9 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using IrrKlang;
 using Newtonsoft.Json;
+using NAudio.CoreAudioApi;
+using NAudio.Wave;
 
 namespace VoiceVoxPluginTest
 {
@@ -44,7 +45,7 @@ namespace VoiceVoxPluginTest
                 Console.WriteLine("Failed 1");
             }
 
-            using (var engine = new ISoundEngine(SoundOutputDriver.AutoDetect, SoundEngineOptionFlag.DefaultOptions))
+            using (var engine = new ISoundEngine())
             {
                 while (true)
                 {
@@ -60,7 +61,7 @@ namespace VoiceVoxPluginTest
                     var parameters2 = new Dictionary<string, string>()
                     {
                         { "text", word },
-                        { "speaker", s.SpeakerId.ToString() },
+                        { "speaker", s.Styles[0].SpeakerId.ToString() },
                     };
 
                     var response2 = await client.PostAsync(
@@ -78,7 +79,7 @@ namespace VoiceVoxPluginTest
 
                     var parameters3 = new Dictionary<string, string>()
                     {
-                        { "speaker", s.SpeakerId.ToString() },
+                        { "speaker", s.Styles[0].SpeakerId.ToString() },
                     };
                     var content3 = new StringContent(json3, new UTF8Encoding(false), "application/json");
                     var response3 = await client.PostAsync(
@@ -88,31 +89,61 @@ namespace VoiceVoxPluginTest
                         Console.WriteLine("Failed 3");
                     }
 
+                    //naudio test code
+                    MMDeviceEnumerator deviceEnumerator = new MMDeviceEnumerator();
+                    var devices = deviceEnumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
+                    string devname = devices[0].FriendlyName;
+
                     using (var memory = new MemoryStream())
                     {
                         await response3.Content.CopyToAsync(memory);
                         await memory.FlushAsync();
                         memory.Seek(0, SeekOrigin.Begin);
 
-                        var sound = engine.GetSoundSource("sound.wav");
-                        if (sound != null)
-                        {
-                            engine.RemoveSoundSource("sound.wav");
-                        }
-                        engine.AddSoundSourceFromIOStream(memory, "sound.wav");
-                        engine.Play2D("sound.wav");
+                        //var player = new System.Media.SoundPlayer(memory);
+                        //player.PlaySync();
+
+                        WaveFileReader waveReader = new WaveFileReader(memory);
+                        WaveOut waveOut = new WaveOut();
+
+                        waveOut.DeviceNumber = 0;
+                        waveOut.Init(waveReader);
+                        waveOut.Play();
+                        while (waveOut.PlaybackState == PlaybackState.Playing) ;
                     }
                 }
             }
         }
 
-        class Speaker
+        public class Speaker
         {
             [JsonProperty("name")]
             public string Name { get; set; }
 
-            [JsonProperty("speaker_id")]
+            [JsonProperty("speaker_uuid")]
+            public string SpeakerUUId { get; set; }
+
+            [JsonProperty("styles")]
+            public VoiceVoxSpeakerStyle[] Styles { get; set; }
+        }
+        public class VoiceVoxSpeakerStyle
+        {
+            [JsonProperty("name")]
+            public string StyleName { get; set; }
+
+            [JsonProperty("id")]
             public int SpeakerId { get; set; }
+        }
+        class ISoundEngine : IDisposable
+        {
+            public ISoundEngine() { }
+
+            public bool Play2D(MemoryStream memory)
+            {
+
+                return true;
+            }
+            public void Dispose() { }
         }
     }
 }

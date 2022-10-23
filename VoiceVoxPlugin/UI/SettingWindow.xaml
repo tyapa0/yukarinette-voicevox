@@ -8,7 +8,7 @@
              mc:Ignorable="d" SizeToContent="WidthAndHeight"
              d:DataContext="{d:DesignInstance {x:Type viewModel:SettingWindowViewModel}}"
              Topmost="True"
-             Title="VOICE VOX トーク設定">
+             Title="VOICE VOX トーク設定" ResizeMode="NoResize">
     <Window.Resources>
         <Style x:Key="LabelBase" TargetType="Label">
             <Setter Property="Margin" Value="3"/>
@@ -75,7 +75,7 @@
                    Style="{StaticResource TopLabel}"/>
                 <ComboBox Grid.Column="1"
                       ItemsSource="{Binding Speakers}"
-                      SelectedValuePath="SpeakerId" DisplayMemberPath="Name"
+                      SelectedValuePath="SpeakerId" DisplayMemberPath="StyleName"
                       SelectedValue="{Binding SpeakerId,UpdateSourceTrigger=PropertyChanged}"/>
             </Grid>
 

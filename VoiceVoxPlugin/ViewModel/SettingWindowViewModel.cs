@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Windows;
 using VoiceVoxPlugin.Core;
 using VoiceVoxPlugin.Data;
 
@@ -14,7 +15,7 @@ namespace VoiceVoxPlugin.ViewModel
             _instance = null;
         }
 
-        public ObservableCollection<Speaker> Speakers { get; } = new ObservableCollection<Speaker>();
+        public ObservableCollection<VoiceVoxSpeakerStyle> Speakers { get; } = new ObservableCollection<VoiceVoxSpeakerStyle>();
         public int SpeakerId { get; set; }
 
         private decimal _speedScale = 1.0m;
