@@ -2,7 +2,7 @@
 VoiceVox を ゆかりねっと 経由で利用するためのプラグインです。
 
 # Features
-* キャラクターが追加されたときに自動的に検出できます。
+* キャラクターが追加されたときに自動的に検出されます。  
 ![voicevox.png.](/image/voicevox.png "settei")  
 
 ## 使い方
