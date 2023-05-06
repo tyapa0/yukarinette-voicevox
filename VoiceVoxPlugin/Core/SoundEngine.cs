@@ -14,18 +14,15 @@ namespace VoiceVoxPlugin.Core
 
         public ISoundEngine(string deviceID) {
             numDeviceId = 0;
-            //MessageBox.Show(deviceID, "DeviceId", System.Windows.MessageBoxButton.OK, MessageBoxImage.Exclamation);
-
-            var deviceEnumerator = new MMDeviceEnumerator();
-            var devices = deviceEnumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
 
             //文字列に一致するデバイスIDを探す
-            for (int i = 0; i < devices.Count; i++)
+            for (int i = 0; i < WaveOut.DeviceCount; i++)
             {
-                //MessageBox.Show(devices[i].DeviceFriendlyName + "##" + deviceID, "numDeviceId", System.Windows.MessageBoxButton.OK, MessageBoxImage.Exclamation);
-                if (devices[i].FriendlyName == deviceID)
+  
+                if (deviceID.StartsWith(WaveOut.GetCapabilities(i).ProductName))
                 {
                     numDeviceId = i;
+                    //MessageBox.Show(numDeviceId.ToString() + ":" + WaveOut.GetCapabilities(i).ProductName + " # " + deviceID, "numDeviceId", System.Windows.MessageBoxButton.OK, MessageBoxImage.Exclamation);
                     break;
                 }
             }
@@ -43,7 +40,7 @@ namespace VoiceVoxPlugin.Core
             waveReader = new WaveFileReader(memory);
             waveOut = new WaveOut();
 
-            //MessageBox.Show(numDeviceId.ToString(), "DeviceNumber", System.Windows.MessageBoxButton.OK, MessageBoxImage.Exclamation);
+            // MessageBox.Show(numDeviceId.ToString(), "DeviceNumber", System.Windows.MessageBoxButton.OK, MessageBoxImage.Exclamation);
             waveOut.DeviceNumber = numDeviceId;
             waveOut.Init(waveReader);
             waveOut.Play();
@@ -56,6 +53,7 @@ namespace VoiceVoxPlugin.Core
     public class ISoundDeviceList : IDisposable
     {
         private MMDeviceCollection devices;
+
         public ISoundDeviceList() {
             MMDeviceEnumerator deviceEnumerator = new MMDeviceEnumerator();
             devices = deviceEnumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
@@ -63,7 +61,9 @@ namespace VoiceVoxPlugin.Core
         }
 
         public string getDeviceID(int num) { return devices[num].FriendlyName; }
+
         public string getDeviceDescription(int num) { return devices[num].FriendlyName; }
+
         public int DeviceCount { get; }
 
         public void Dispose() { }
