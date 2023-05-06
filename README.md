@@ -7,7 +7,7 @@ VoiceVox を ゆかりねっと 経由で利用するためのプラグインで
 
 ## 使い方
 
-1. [Releaseページ](https://github.com/snowman-x/yukarinette-voicevox/releases/) から最新バージョンの `VoiceVoxPlugin_vX.X.zip` をダウンロードします
+1. [Releaseページ](https://github.com/tyapa0/yukarinette-voicevox/releases/) から最新バージョンの `VoiceVoxPlugin_vX.X.zip` をダウンロードします
 2. ダウンロードした zip ファイルのプロパティを開いて、ブロックされていたら解除します。
 3. ダウンロードした zip ファイルを展開します。
 4. 以下のファイルを ゆかりねっと のプラグインフォルダーにコピーします。
